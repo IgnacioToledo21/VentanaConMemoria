@@ -13,22 +13,22 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.paint.Color;
 
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Properties;
 
-
 public class App extends Application {
 
-    //Modelo
+    // Modelo
     private DoubleProperty x = new SimpleDoubleProperty();
     private DoubleProperty y = new SimpleDoubleProperty();
     private DoubleProperty width = new SimpleDoubleProperty();
     private DoubleProperty height = new SimpleDoubleProperty();
 
     private IntegerProperty red = new SimpleIntegerProperty();
+    private IntegerProperty blue = new SimpleIntegerProperty();
+    private IntegerProperty green = new SimpleIntegerProperty();
 
     @Override
     public void init() throws Exception {
@@ -36,13 +36,12 @@ public class App extends Application {
         System.out.println("Iniciando.");
 
         File profileFolder = new File(System.getProperty("user.home"));
-        File configFolder = new File(profileFolder,".ventanaConMemoria");
-        File configFile = new File(configFolder,"config.properties");
+        File configFolder = new File(profileFolder, ".ventanaConMemoria");
+        File configFile = new File(configFolder, "config.properties");
 
         if (configFile.exists()) {
-            //lo cargamos
+            // Cargar las propiedades
             FileInputStream fis = new FileInputStream(configFile);
-
             Properties props = new Properties();
             props.load(fis);
 
@@ -51,24 +50,26 @@ public class App extends Application {
             x.set(Double.parseDouble(props.getProperty("location.x")));
             y.set(Double.parseDouble(props.getProperty("location.y")));
 
-        } else {
+            // Cargar los valores del color
+            red.set(Integer.parseInt(props.getProperty("color.red", "0")));   // Valor por defecto 0
+            green.set(Integer.parseInt(props.getProperty("color.green", "0"))); // Valor por defecto 0
+            blue.set(Integer.parseInt(props.getProperty("color.blue", "0")));  // Valor por defecto 0
 
+        } else {
             width.set(320);
             height.set(200);
             x.set(0);
             y.set(0);
         }
-
     }
 
     VBox root = new VBox();
-
     Scene scene = new Scene(root, 320, 200);
 
     @Override
     public void start(Stage primaryStage) throws Exception {
 
-        //Barra de deslizar
+        // Barra de deslizar ROJO
         Slider redSlider = new Slider();
         redSlider.setMin(0);
         redSlider.setMax(255);
@@ -77,10 +78,28 @@ public class App extends Application {
         redSlider.setMajorTickUnit(255);
         redSlider.setMinorTickCount(5);
 
+        // Barra de deslizar AZUL
+        Slider blueslider = new Slider();
+        blueslider.setMin(0);
+        blueslider.setMax(255);
+        blueslider.setShowTickLabels(true);
+        blueslider.setShowTickMarks(true);
+        blueslider.setMajorTickUnit(255);
+        blueslider.setMinorTickCount(5);
+
+        // Barra de deslizar VERDE
+        Slider greenSlider = new Slider();
+        greenSlider.setMin(0);
+        greenSlider.setMax(255);
+        greenSlider.setShowTickLabels(true);
+        greenSlider.setShowTickMarks(true);
+        greenSlider.setMajorTickUnit(255);
+        greenSlider.setMinorTickCount(5);
+
         VBox root = new VBox();
         root.setFillWidth(false);
         root.setAlignment(Pos.CENTER);
-        root.getChildren().add(redSlider);
+        root.getChildren().addAll(redSlider, blueslider, greenSlider);
 
         Scene scene = new Scene(root, width.get(), height.get());
 
@@ -90,54 +109,65 @@ public class App extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        //Vinculos Bindings
-
+        // Vincular las propiedades de la ventana con las propiedades del modelo
         x.bind(primaryStage.xProperty());
         y.bind(primaryStage.yProperty());
         width.bind(primaryStage.widthProperty());
         height.bind(primaryStage.heightProperty());
 
+        // Vincular sliders con los valores de color
         redSlider.valueProperty().bindBidirectional(red);
+        blueslider.valueProperty().bindBidirectional(blue);
+        greenSlider.valueProperty().bindBidirectional(green);
 
+        // Listeners para actualizar el color de fondo cuando cambien los valores de los sliders
         red.addListener((o, ov, nv) -> {
-          Color c = Color.rgb(nv.intValue(), 0, 0);
-          root.setBackground(Background.fill(c));
+            Color r = Color.rgb(nv.intValue(), green.get(), blue.get());
+            root.setBackground(Background.fill(r));
         });
 
+        blue.addListener((o, ov, nv) -> {
+            Color b = Color.rgb(red.get(), green.get(), nv.intValue());
+            root.setBackground(Background.fill(b));
+        });
+
+        green.addListener((o, ov, nv) -> {
+            Color g = Color.rgb(red.get(), nv.intValue(), blue.get());
+            root.setBackground(Background.fill(g));
+        });
+
+        // Aplicar el color inicial basado en los valores cargados
+        Color initialColor = Color.rgb(red.get(), green.get(), blue.get());
+        root.setBackground(Background.fill(initialColor));
     }
 
     @Override
     public void stop() throws Exception {
-
         System.out.println("Cerrando.");
 
         File profileFolder = new File(System.getProperty("user.home"));
         File configFolder = new File(profileFolder, ".ventanaConMemoria");
         File configFile = new File(configFolder, "config.properties");
 
-        if (!configFolder.exists()){
+        if (!configFolder.exists()) {
             configFolder.mkdir();
         }
 
         System.out.println("Saving config: " + configFile);
 
-//        System.out.println("Profile :" + profileFolder);
-//        System.out.println("Config Folder :" + configFolder);
-//        System.out.println("Config File :" + configFile);
-
         FileOutputStream fos = new FileOutputStream(configFile);
-
 
         Properties props = new Properties();
         props.setProperty("size.width", "" + width.getValue());
         props.setProperty("size.height", "" + height.getValue());
         props.setProperty("location.x", "" + x.getValue());
         props.setProperty("location.y", "" + y.getValue());
-        props.store(fos, "Estado de la ventana");
 
+        // Guardar los valores de los colores
+        props.setProperty("color.red", "" + red.getValue());
+        props.setProperty("color.green", "" + green.getValue());
+        props.setProperty("color.blue", "" + blue.getValue());
+
+        props.store(fos, "Estado de la ventana y color");
     }
 }
-
-
-
-
