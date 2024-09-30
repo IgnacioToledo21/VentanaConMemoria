@@ -120,25 +120,27 @@ public class App extends Application {
         blueslider.valueProperty().bindBidirectional(blue);
         greenSlider.valueProperty().bindBidirectional(green);
 
-        // Listeners para actualizar el color de fondo cuando cambien los valores de los sliders
+        // Listener para actualizar el color de fondo cuando cambien los valores
         red.addListener((o, ov, nv) -> {
-            Color r = Color.rgb(nv.intValue(), green.get(), blue.get());
-            root.setBackground(Background.fill(r));
+            updateBackgroundColor(root);
         });
 
         blue.addListener((o, ov, nv) -> {
-            Color b = Color.rgb(red.get(), green.get(), nv.intValue());
-            root.setBackground(Background.fill(b));
+            updateBackgroundColor(root);
         });
 
         green.addListener((o, ov, nv) -> {
-            Color g = Color.rgb(red.get(), nv.intValue(), blue.get());
-            root.setBackground(Background.fill(g));
+            updateBackgroundColor(root);
         });
 
         // Aplicar el color inicial basado en los valores cargados
-        Color initialColor = Color.rgb(red.get(), green.get(), blue.get());
-        root.setBackground(Background.fill(initialColor));
+        updateBackgroundColor(root);
+    }
+
+    //Actualizar el color del fondo
+    private void updateBackgroundColor(VBox root) {
+        Color color = Color.rgb(red.get(), green.get(), blue.get());
+        root.setBackground(Background.fill(color));
     }
 
     @Override
@@ -171,3 +173,4 @@ public class App extends Application {
         props.store(fos, "Estado de la ventana y color");
     }
 }
+
